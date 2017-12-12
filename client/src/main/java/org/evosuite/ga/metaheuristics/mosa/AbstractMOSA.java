@@ -399,6 +399,10 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 
 		// Create a random parent population P0
 		generateInitialPopulation(Properties.POPULATION);
+
+		// Determine fitness
+		calculateFitness();
+		this.notifyIteration();
 	}
 
 	protected abstract double numberOfCoveredTargets();
