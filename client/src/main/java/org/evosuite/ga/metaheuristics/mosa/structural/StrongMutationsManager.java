@@ -50,12 +50,11 @@ public class StrongMutationsManager<T extends Chromosome> extends StructuralGoal
 	 */
 	public StrongMutationsManager(List<FitnessFunction<T>> mutationTargets){
 		super(mutationTargets);
-		// initialize uncovered goals
-		uncoveredGoals.addAll(mutationTargets);
-		if (mutationTargets.size() != uncoveredGoals.size()){
+
+		if (mutationTargets.size() != this.getUncoveredGoals().size()){
 			logger.error("THERE IS A PROBLEM IN StrongMutationTestFitness.equals()");
 		}
-		graph = new StrongMutationGraph<T, FitnessFunction<T>>(uncoveredGoals);
+		graph = new StrongMutationGraph<T, FitnessFunction<T>>(this.getUncoveredGoals());
 		this.currentGoals.addAll(graph.rootMutants);
 
 		for(FitnessFunction<T> goal : mutationTargets) {
@@ -67,8 +66,7 @@ public class StrongMutationsManager<T extends Chromosome> extends StructuralGoal
 
 	/**
 	 * Update the set of covered goals and the set of current goals (actual objectives)
-	 * @param population list of TestChromosome
-	 * @return covered goals along with the corresponding test case
+	 * @param c TestChromosome
 	 */
 	public void calculateFitness(T c){
 		// run test
@@ -80,7 +78,7 @@ public class StrongMutationsManager<T extends Chromosome> extends StructuralGoal
 
 		// calculate current targets
 		TestChromosome tch = (TestChromosome) c;
-		Set<FitnessFunction<T>> visitedStatements = new HashSet<FitnessFunction<T>>(uncoveredGoals.size()*2);
+		Set<FitnessFunction<T>> visitedStatements = new HashSet<FitnessFunction<T>>(this.getUncoveredGoals().size()*2);
 		LinkedList<FitnessFunction<T>> targets = new LinkedList<FitnessFunction<T>>();
 		targets.addAll(currentGoals);
 		
@@ -119,19 +117,19 @@ public class StrongMutationsManager<T extends Chromosome> extends StructuralGoal
 			}
 		} // for
 		//logger.error("Number of touched mutants = {}", count);
-		currentGoals.removeAll(coveredGoals.keySet());
+		currentGoals.removeAll(this.getCoveredGoals());
 		//debugStructuralDependencies(c);
 	}
 
 	protected void debugStructuralDependencies(T c){
-		for (FitnessFunction<T> fitnessFunction : this.uncoveredGoals) {
+		for (FitnessFunction<T> fitnessFunction : this.getUncoveredGoals()) {
 			StrongMutationTestFitness strong = (StrongMutationTestFitness) fitnessFunction;
 			double value = fitnessFunction.getFitness(c);
-			if (value <2 && !currentGoals.contains(fitnessFunction) && !this.coveredGoals.keySet().contains(fitnessFunction)) {
+			if (value <2 && !currentGoals.contains(fitnessFunction) && !this.getCoveredGoals().contains(fitnessFunction)) {
 				logger.error("Mutant {} has fitness {} but is not in the current goals", fitnessFunction.toString(), value);
 				for (FitnessFunction<T> fparent : graph.getStructuralParents(fitnessFunction)){
 					if (fparent.getFitness(c) == 0.0)
-						logger.error(">> Parent {} has fitness {} \n 1) is evaluated? {} \n 2) is covered? {}", fparent.toString(), fparent.getFitness(c), c.getFitnessValues().containsKey(fparent), this.coveredGoals.containsKey(fparent) );
+						logger.error(">> Parent {} has fitness {} \n 1) is evaluated? {} \n 2) is covered? {}", fparent.toString(), fparent.getFitness(c), c.getFitnessValues().containsKey(fparent), this.getCoveredGoals().contains(fparent) );
 				}
 				if (strong.getMutation().getControlDependencies().size() == 0)
 					logger.error(">> NO BRANCHES");
@@ -139,7 +137,7 @@ public class StrongMutationsManager<T extends Chromosome> extends StructuralGoal
 			for (BranchCoverageGoal branchGoal : strong.getMutation().getControlDependencies()){
 				BranchCoverageTestFitness branchFitness = new BranchCoverageTestFitness(branchGoal);
 				double branchValue = branchFitness.getFitness((TestChromosome) c);
-				if (branchValue == 0 && !currentGoals.contains(fitnessFunction) && !this.coveredGoals.keySet().contains(fitnessFunction)){
+				if (branchValue == 0 && !currentGoals.contains(fitnessFunction) && !this.getCoveredGoals().contains(fitnessFunction)){
 					logger.error("Mutant {} has branchfitness = 0, but is not in the current goals", fitnessFunction.toString(), value);
 				}
 			}

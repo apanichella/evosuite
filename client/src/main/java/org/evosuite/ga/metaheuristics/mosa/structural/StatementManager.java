@@ -39,17 +39,16 @@ public class StatementManager<T extends Chromosome> extends StructuralGoalManage
 	 */
 	public StatementManager(List<FitnessFunction<T>> fitnessFunctions){
 		super(fitnessFunctions);
-		// initialize uncovered goals
-		uncoveredGoals.addAll(fitnessFunctions);
-		if (fitnessFunctions.size() != uncoveredGoals.size()){
+
+		if (fitnessFunctions.size() != this.getUncoveredGoals().size()){
 			logger.error("THERE IS A PROBLEM IN StatementCoverageTestFitness.equals()");
 		}
 
-		graph = new StatementFitnessGraph<T, FitnessFunction<T>>(uncoveredGoals);
+		graph = new StatementFitnessGraph<T, FitnessFunction<T>>(this.getUncoveredGoals());
 		this.currentGoals.addAll(graph.rootStatements);
 
 		line2Statement = new HashMap<Integer, List<StatementCoverageTestFitness>>();
-		for (FitnessFunction<T> f : uncoveredGoals){
+		for (FitnessFunction<T> f : this.getUncoveredGoals()){
 			StatementCoverageTestFitness stmt = (StatementCoverageTestFitness) f;
 			int line = stmt.getGoalInstruction().getLineNumber();
 			if (line2Statement.containsKey(line)){
@@ -72,7 +71,7 @@ public class StatementManager<T extends Chromosome> extends StructuralGoalManage
 		c.setChanged(false);
 
 		if (result.hasTimeout() || result.hasTestException()){
-			for (FitnessFunction<T> f : uncoveredGoals)
+			for (FitnessFunction<T> f : this.getUncoveredGoals())
 				c.setFitness(f, Double.MAX_VALUE);
 			return;
 		}
@@ -80,7 +79,7 @@ public class StatementManager<T extends Chromosome> extends StructuralGoalManage
 		updateStatementWithNegativeLines(c);
 		
 		// 1) we update the set of currents goals
-		Set<FitnessFunction<T>> visitedStatements = new HashSet<FitnessFunction<T>>(uncoveredGoals.size()*2);
+		Set<FitnessFunction<T>> visitedStatements = new HashSet<FitnessFunction<T>>(this.getUncoveredGoals().size()*2);
 		LinkedList<FitnessFunction<T>> targets = new LinkedList<FitnessFunction<T>>();
 		targets.addAll(this.currentGoals);
 
@@ -146,9 +145,9 @@ public class StatementManager<T extends Chromosome> extends StructuralGoalManage
 	}
 
 	protected void debugStructuralDependencies(T c){
-		for (FitnessFunction<T> fitnessFunction : this.uncoveredGoals) {
+		for (FitnessFunction<T> fitnessFunction : this.getUncoveredGoals()) {
 			double value = fitnessFunction.getFitness(c);
-			if (value <1 && !currentGoals.contains(fitnessFunction) && !this.coveredGoals.keySet().contains(fitnessFunction)) {
+			if (value <1 && !currentGoals.contains(fitnessFunction) && !this.getCoveredGoals().contains(fitnessFunction)) {
 				StatementCoverageTestFitness stmt = (StatementCoverageTestFitness) fitnessFunction;
 				int line = stmt.getGoalInstruction().getLineNumber();
 				logger.error("Branch {}, line {},  has fitness {} but is not in the current goals", fitnessFunction.toString(), line, value);
