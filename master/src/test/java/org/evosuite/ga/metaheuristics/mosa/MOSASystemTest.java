@@ -14,6 +14,11 @@ import org.junit.Test;
 
 import java.util.List;
 
+/**
+ * @author Annibale Panichella
+ *
+ * System-level test for MOSA
+ */
 public class MOSASystemTest extends SystemTestBase {
 
     public TestGenerationResult setup(Properties.StoppingCondition sc, int budget, String cut){
@@ -39,32 +44,15 @@ public class MOSASystemTest extends SystemTestBase {
         return getResult(result);
     }
 
-    public int coveredTargets(MOSA mosa){
-        TestSuiteChromosome suite = (TestSuiteChromosome) mosa.getBestIndividuals().get(0);
-        List<TestChromosome> tests = suite.getTestChromosomes();
-
-        int coveredTargets = 0;
-        for (Object f : mosa.getFitnessFunctions()){
-            FitnessFunction target = (FitnessFunction) f;
-            for (TestChromosome t : tests){
-                if (t.getFitness(target) == 0) {
-                    coveredTargets++;
-                    break;
-                }
-            }
-        }
-        return coveredTargets;
-    }
-
     @Test
     public void testMOSAWithLimitedTime(){
         TestGenerationResult result = this.setup(Properties.StoppingCondition.MAXTIME, 20, XMLElement2.class.getCanonicalName());
         Assert.assertTrue(result.getGeneticAlgorithm() instanceof MOSA);
 
         MOSA mosa = (MOSA) result.getGeneticAlgorithm();
-
-        Assert.assertTrue(mosa.budgetMonitor.getTime2MaxCoverage()<20000);
-        Assert.assertTrue(mosa.budgetMonitor.getTime2MaxCoverage()>15000);
+        System.out.println(mosa.budgetMonitor.getTime2MaxCoverage());
+        Assert.assertTrue(mosa.budgetMonitor.getTime2MaxCoverage()<22000);
+        Assert.assertTrue(mosa.budgetMonitor.getTime2MaxCoverage()>10000);
 
         int coveredTargets = coveredTargets(mosa);
 
@@ -96,13 +84,31 @@ public class MOSASystemTest extends SystemTestBase {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    // ---- Utility methods
+
     protected TestGenerationResult getResult(Object result) {
         assert(result instanceof List);
         List<List<TestGenerationResult>> results = (List<List<TestGenerationResult>>)result;
         assert(results.size() == 1);
         //return results.iterator().next().getGeneticAlgorithm();
         return results.get(0).get(0);
+    }
+
+    public int coveredTargets(AbstractMOSA mosa){
+        TestSuiteChromosome suite = (TestSuiteChromosome) mosa.getBestIndividuals().get(0);
+        List<TestChromosome> tests = suite.getTestChromosomes();
+
+        int coveredTargets = 0;
+        for (Object f : mosa.getFitnessFunctions()){
+            FitnessFunction target = (FitnessFunction) f;
+            for (TestChromosome t : tests){
+                if (t.getFitness(target) == 0) {
+                    coveredTargets++;
+                    break;
+                }
+            }
+        }
+        return coveredTargets;
     }
 
 }
