@@ -173,8 +173,10 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 				OutputCoverageTestFitness output = (OutputCoverageTestFitness) ff;
 				ClassLoader loader = TestGenerationContext.getInstance().getClassLoaderForSUT();
 				BytecodeInstructionPool pool = BytecodeInstructionPool.getInstance(loader);
-				if (pool.getInstructionsIn(output.getClassName(), output.getMethod()) == null)
+				if (pool.getInstructionsIn(output.getClassName(), output.getMethod()) == null){
+					this.currentGoals.add(ff);
 					continue;
+				}
 				for (BytecodeInstruction instruction : pool.getInstructionsIn(output.getClassName(), output.getMethod())) {
 					if (instruction.getBasicBlock() != null){
 						Set<ControlDependency> cds = instruction.getBasicBlock().getControlDependencies();
@@ -203,8 +205,10 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 				InputCoverageTestFitness input = (InputCoverageTestFitness) ff;
 				ClassLoader loader = TestGenerationContext.getInstance().getClassLoaderForSUT();
 				BytecodeInstructionPool pool = BytecodeInstructionPool.getInstance(loader);
-				if (pool.getInstructionsIn(input.getClassName(), input.getMethod()) == null)
+				if (pool.getInstructionsIn(input.getClassName(), input.getMethod()) == null) {
+					this.currentGoals.add(ff);
 					continue;
+				}
 				for (BytecodeInstruction instruction : pool.getInstructionsIn(input.getClassName(), input.getMethod())) {
 					if (instruction.getBasicBlock() != null){
 						Set<ControlDependency> cds = instruction.getBasicBlock().getControlDependencies();
