@@ -118,8 +118,8 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		}
 
 		this.currentIteration++;
-		//logger.debug("N. fronts = {}", ranking.getNumberOfSubfronts());
-		//logger.debug("1* front size = {}", ranking.getSubfront(0).size());
+		//logger.debug("N. fronts = {}", rankingFunction.getNumberOfSubfronts());
+		//logger.debug("1* front size = {}", rankingFunction.getSubfront(0).size());
 		logger.debug("Covered goals = {}", goalsManager.getCoveredGoals().size());
 		logger.debug("Current goals = {}", goalsManager.getCurrentGoals().size());
 		logger.debug("Uncovered goals = {}", goalsManager.getUncoveredGoals().size());
