@@ -19,10 +19,7 @@
  */
 package org.evosuite.ga.metaheuristics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 import org.evosuite.EvoSuite;
 import org.evosuite.Properties;
@@ -205,7 +202,7 @@ public class NSGAIISystemTest extends SystemTestBase
 		population.add(c10);
 
 		CrowdingDistance<NSGAChromosome> crowdingDistance = new CrowdingDistance<NSGAChromosome>();
-		crowdingDistance.crowdingDistanceAssignment(population, fitnessFunctions);
+		crowdingDistance.assignSecondaryRank(population, new HashSet<>(fitnessFunctions));
 		Collections.sort(population, new RankAndCrowdingDistanceComparator(true));
 
 		Assert.assertTrue(population.get(0).getDistance() == Double.POSITIVE_INFINITY);
@@ -279,7 +276,7 @@ public class NSGAIISystemTest extends SystemTestBase
         population.add(c10);
 
         CrowdingDistance<NSGAChromosome> crowdingDistance = new CrowdingDistance<NSGAChromosome>();
-        crowdingDistance.crowdingDistanceAssignment(population, fitnessFunctions);
+        crowdingDistance.assignSecondaryRank(population, new HashSet<>(fitnessFunctions));
         Collections.sort(population, new RankAndCrowdingDistanceComparator(true));
 
         Assert.assertTrue(population.get(0).getDistance() == Double.POSITIVE_INFINITY);

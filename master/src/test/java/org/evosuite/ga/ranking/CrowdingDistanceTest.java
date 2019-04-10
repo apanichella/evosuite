@@ -2,6 +2,9 @@ package org.evosuite.ga.ranking;
 
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.ga.operators.ranking.CrowdingDistance;
+import org.evosuite.ga.operators.ranking.EpsilonDominance;
+import org.evosuite.ga.operators.ranking.SecondaryRanking;
+import org.evosuite.ga.operators.ranking.SubvectorDominance;
 import org.evosuite.testcase.TestChromosome;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,8 +49,8 @@ public class CrowdingDistanceTest {
         front.add(tch2);
         front.add(tch3);
 
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.crowdingDistanceAssignment(front, ff);
+        SecondaryRanking distance = new CrowdingDistance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
 
         assertEquals(Double.POSITIVE_INFINITY, tch1.getDistance(), 0.000001);
         assertEquals(2.0, tch2.getDistance(), 0.000001);
@@ -73,8 +76,8 @@ public class CrowdingDistanceTest {
         front.add(tch2);
         front.add(tch3);
 
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.subvectorDominanceAssignment(front, new HashSet(ff));
+        SecondaryRanking distance = new SubvectorDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
 
         assertEquals(1.0, tch1.getDistance(), 0.000001);
         assertEquals(1.0, tch2.getDistance(), 0.000001);
@@ -100,8 +103,8 @@ public class CrowdingDistanceTest {
         front.add(tch2);
         front.add(tch3);
 
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.fastEpsilonDominanceAssignment(front, new HashSet(ff));
+        SecondaryRanking distance = new EpsilonDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
 
         assertEquals(2d/3d, tch1.getDistance(), 0.000001);
         assertEquals(0.0, tch2.getDistance(), 0.000001);
@@ -112,10 +115,14 @@ public class CrowdingDistanceTest {
     public void testEmptyFront() {
         // create front
         List<TestChromosome> front = new LinkedList<>();
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.crowdingDistanceAssignment(front,ff);
-        distance.fastEpsilonDominanceAssignment(front, new HashSet(ff));
-        distance.subvectorDominanceAssignment(front, new HashSet(ff));
+        SecondaryRanking distance = new CrowdingDistance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
+
+        distance = new EpsilonDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
+
+        distance = new SubvectorDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
     }
 
     @Test
@@ -127,14 +134,16 @@ public class CrowdingDistanceTest {
         List<TestChromosome> front = new LinkedList<>();
         front.add(tch1);
 
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.crowdingDistanceAssignment(front,ff);
+        SecondaryRanking distance = new CrowdingDistance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(Double.POSITIVE_INFINITY, tch1.getDistance(), 0.00001);
 
-        distance.fastEpsilonDominanceAssignment(front, new HashSet(ff));
+        distance = new EpsilonDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(0.0, tch1.getDistance(), 0.00001);
 
-        distance.subvectorDominanceAssignment(front, new HashSet(ff));
+        distance = new SubvectorDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(Double.POSITIVE_INFINITY, tch1.getDistance(), 0.00001);
     }
 
@@ -150,16 +159,18 @@ public class CrowdingDistanceTest {
         List<TestChromosome> front = new LinkedList<>();
         front.add(tch1); front.add(tch2);
 
-        CrowdingDistance distance = new CrowdingDistance();
-        distance.crowdingDistanceAssignment(front,ff);
+        SecondaryRanking distance = new CrowdingDistance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(Double.POSITIVE_INFINITY, tch1.getDistance(), 0.00001);
         assertEquals(Double.POSITIVE_INFINITY, tch2.getDistance(), 0.00001);
 
-        distance.fastEpsilonDominanceAssignment(front, new HashSet(ff));
+        distance = new EpsilonDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(0.5, tch1.getDistance(), 0.00001);
         assertEquals(0.5, tch2.getDistance(), 0.00001);
 
-        distance.subvectorDominanceAssignment(front, new HashSet(ff));
+        distance = new SubvectorDominance();
+        distance.assignSecondaryRank(front, new HashSet(ff));
         assertEquals(1.0, tch1.getDistance(), 0.00001);
         assertEquals(1.0, tch2.getDistance(), 0.00001);
     }

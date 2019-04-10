@@ -19,10 +19,7 @@
  */
 package org.evosuite.ga.metaheuristics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 import org.evosuite.Properties;
 import org.evosuite.ga.Chromosome;
@@ -30,6 +27,7 @@ import org.evosuite.ga.ChromosomeFactory;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.ga.comparators.RankAndCrowdingDistanceComparator;
 import org.evosuite.ga.operators.ranking.CrowdingDistance;
+import org.evosuite.ga.operators.ranking.SecondaryRanking;
 import org.evosuite.utils.Randomness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +62,7 @@ public class NSGAII<T extends Chromosome>
 
     private static final Logger logger = LoggerFactory.getLogger(NSGAII.class);
 
-    private final CrowdingDistance<T> crowdingDistance;
+    private final SecondaryRanking<T> crowdingDistance;
 
     /**
      * Constructor
@@ -140,7 +138,7 @@ public class NSGAII<T extends Chromosome>
 
         while ((remain > 0) && (remain >= front.size())) {
             // Assign crowding distance to individuals
-            this.crowdingDistance.crowdingDistanceAssignment(front, this.getFitnessFunctions());
+            this.crowdingDistance.assignSecondaryRank(front, new HashSet<>(this.getFitnessFunctions()));
             // Add the individuals of this front
             for (int k = 0; k < front.size(); k++)
                 population.add(front.get(k));
@@ -157,7 +155,7 @@ public class NSGAII<T extends Chromosome>
         // Remain is less than front(index).size, insert only the best one
         if (remain > 0) {
             // front contains individuals to insert
-            this.crowdingDistance.crowdingDistanceAssignment(front, this.getFitnessFunctions());
+            this.crowdingDistance.assignSecondaryRank(front, new HashSet<>(this.getFitnessFunctions()));
 
             Collections.sort(front, new RankAndCrowdingDistanceComparator<T>(true));
 

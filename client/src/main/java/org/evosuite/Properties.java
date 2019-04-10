@@ -330,6 +330,19 @@ public class Properties {
 	@Parameter(key = "ranking_type", group = "Runtime", description = "type of ranking to use in MOSA")
 	public static RankingType RANKING_TYPE = RankingType.PREFERENCE_SORTING;
 
+	// MOSA PROPERTIES
+	public enum SecondaryRankingType {
+		// Preference sorting is the ranking strategy proposed in
+		CROWDING_DISTANCE,
+		EPSILON_DOMINANCE,
+		SUBVECTOR_DOMINANCE,
+		POTENTIAL_COVERAGE,
+        COVERAGE_DIVERSITY
+	}
+
+	@Parameter(key = "secondary_ranking_type", group = "Runtime", description = "type of ranking to use in DynaMOSA")
+	public static SecondaryRankingType SECONDARY_RANKING_TYPE = SecondaryRankingType.EPSILON_DOMINANCE;
+
 	@Parameter(key = "algorithm", group = "Search Algorithm", description = "Search algorithm")
 	public static Algorithm ALGORITHM = Algorithm.MONOTONIC_GA;
 

@@ -26,13 +26,14 @@ import java.util.Set;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.ga.comparators.SortByFitness;
+import org.evosuite.testcase.TestChromosome;
 
 /**
- * This class implements different variants of Crowding Distance for many-objective problems
- * 
+ * This class implements the classic Crowding Distance in NSGA-II
+ *
  * @author Annibale Panichella
  */
-public class CrowdingDistance<T extends Chromosome> implements Serializable {
+public class CrowdingDistance<T extends Chromosome> extends SecondaryRanking<T> {
 
 	private static final long serialVersionUID = 5700682318003298299L;
 
@@ -42,7 +43,7 @@ public class CrowdingDistance<T extends Chromosome> implements Serializable {
 	 * @param front front of non-dominated solutions/tests
 	 * @param set list of goals/targets (e.g., branches) to consider
 	 */
-	public void crowdingDistanceAssignment(List<T> front, List<FitnessFunction<T>> set) {
+	public void assignSecondaryRank(List<T> front, Set<FitnessFunction<T>> set)  {
 		int size = front.size();
 
 		if (size == 0)
@@ -84,90 +85,5 @@ public class CrowdingDistance<T extends Chromosome> implements Serializable {
 		}
 	}
 
-	/**
-	 * This method implements a variant of the crowding distance named "subvector-dominance-assignment"
-	 * proposed by K\"{o}ppen and Yoshida in :
-	 * [1] Mario K\"{o}ppen and Kaori Yoshida, "Substitute Distance Assignments in NSGA-II for handling Many-objective 
-	 * Optimization Problems", Evolutionary Multi-Criterion Optimization, Volume 4403 of the series Lecture Notes 
-	 * in Computer Science pp 727-741.
-	 * 
-	 * @param front front of non-dominated solutions/tests
-	 * @param set set of goals/targets (e.g., branches) to consider
-	 */
-	public void subvectorDominanceAssignment(List<T> front, Set<FitnessFunction<T>> set) {
-		int size = front.size();
-		if (front.size() == 1){
-			front.get(0).setDistance(Double.POSITIVE_INFINITY);
-			return;
-		}
-
-		for (int i = 0; i < size; i++)
-			front.get(i).setDistance(Double.MAX_VALUE);
-
-		int dominate1, dominate2;
-		for (int i = 0; i<front.size()-1; i++){
-			T p1 = front.get(i);
-			for (int j = i+1; j<front.size(); j++){
-				T p2 = front.get(j);
-				dominate1 = 0;
-				dominate2 = 0;
-				for (final FitnessFunction<T> ff : set) {
-					double value1 = p1.getFitness(ff);
-					double value2 = p2.getFitness(ff);
-					if (value1 < value2)
-						dominate1++;
-					else if (value1 > value2)
-						dominate2++;
-				}
-				p1.setDistance(Math.min(dominate1, p1.getDistance()));
-				p2.setDistance(Math.min(dominate2, p2.getDistance()));
-			}
-		}
-	}
-
-	/**
-	 * This method implements a "fast" version of the variant of the crowding distance named "epsilon-dominance-assignment"
-	 * proposed by K\"{o}ppen and Yoshida in :
-	 * [1] Mario K\"{o}ppen and Kaori Yoshida, "Substitute Distance Assignments in NSGA-II for handling Many-objective 
-	 * Optimization Problems", Evolutionary Multi-Criterion Optimization, Volume 4403 of the series Lecture Notes 
-	 * in Computer Science pp 727-741.
-	 * 
-	 * @param front front of non-dominated solutions/tests
-	 * @param set set of goals/targets (e.g., branches) to consider
-	 */
-	public void fastEpsilonDominanceAssignment(List<T> front, Set<FitnessFunction<T>> set) {
-		double value;
-		for (T test : front){
-			test.setDistance(0);
-		}
-
-		for (final FitnessFunction<T> ff : set) {
-			double min = Double.POSITIVE_INFINITY;
-			List<T> minSet = new ArrayList<T>(front.size());
-			double max = 0;
-			for (T test : front){
-				value = test.getFitness(ff);
-				if (value < min){
-					min = value;
-					minSet.clear();
-					minSet.add(test);
-				} else if (value == min)
-					minSet.add(test);
-				
-				if (value > max){
-					max = value;
-				} 
-			}
-
-			//if (max == min)
-			//	continue;
-			
-			for (T test : minSet){
-				double numer = (front.size() - minSet.size());
-				double demon = front.size();
-				test.setDistance(Math.max(test.getDistance(), numer/demon));
-			}
-		}
-	}
 
 }
