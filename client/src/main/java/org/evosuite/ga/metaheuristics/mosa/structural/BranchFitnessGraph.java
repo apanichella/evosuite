@@ -26,12 +26,20 @@ import java.util.Set;
 import org.evosuite.coverage.branch.Branch;
 import org.evosuite.coverage.branch.BranchCoverageGoal;
 import org.evosuite.coverage.branch.BranchCoverageTestFitness;
+import org.evosuite.coverage.io.input.InputCoverageTestFitness;
+import org.evosuite.coverage.io.output.OutputCoverageTestFitness;
+import org.evosuite.coverage.line.LineCoverageTestFitness;
+import org.evosuite.coverage.method.MethodCoverageTestFitness;
+import org.evosuite.coverage.mutation.StrongMutationTestFitness;
+import org.evosuite.coverage.mutation.WeakMutationTestFitness;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.graphs.cfg.ActualControlFlowGraph;
 import org.evosuite.graphs.cfg.BasicBlock;
 import org.evosuite.graphs.cfg.BytecodeInstruction;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +55,8 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 	
 	private static final Logger logger = LoggerFactory.getLogger(BranchFitnessGraph.class);
 
-	protected DefaultDirectedGraph<FitnessFunction<T>, DependencyEdge> graph = new DefaultDirectedGraph<FitnessFunction<T>, DependencyEdge>(DependencyEdge.class);
-
+	protected SimpleDirectedWeightedGraph<FitnessFunction<T>, DependencyEdge> graph = new SimpleDirectedWeightedGraph<FitnessFunction<T>, DependencyEdge>(DependencyEdge.class);
+	
 	protected Set<FitnessFunction<T>> rootBranches = new HashSet<FitnessFunction<T>>();
 
 	@SuppressWarnings("unchecked")
@@ -80,18 +88,43 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 					continue;
 				}
 				
+				// determine the weight of the child target
+				double weight = determineWeight (fitness);
+				
 				BranchCoverageGoal goal = new BranchCoverageGoal(newB, true, newB.getClassName(), newB.getMethodName());
 				BranchCoverageTestFitness newFitness = new BranchCoverageTestFitness(goal);
-				graph.addEdge((FitnessFunction<T>) newFitness, fitness);
+				DependencyEdge edge1 = graph.addEdge((FitnessFunction<T>) newFitness, fitness);
+				graph.setEdgeWeight(edge1, weight);
 
 				BranchCoverageGoal goal2 = new BranchCoverageGoal(newB, false, newB.getClassName(), newB.getMethodName());
 				BranchCoverageTestFitness newfitness2 = new BranchCoverageTestFitness(goal2);
-				graph.addEdge((FitnessFunction<T>) newfitness2, fitness);
+				DependencyEdge edge2 = graph.addEdge((FitnessFunction<T>) newfitness2, fitness);
+				graph.setEdgeWeight(edge2, weight);
 			}
 		}
 	}
 	
 	
+	private double determineWeight(FitnessFunction<T> target) {
+		double weight = 1d;
+		if (target instanceof StrongMutationTestFitness) {
+			weight = 2d;
+		} else if (target instanceof WeakMutationTestFitness) {
+			weight = 1.5d;
+		} else if (target instanceof OutputCoverageTestFitness) {
+			weight = 0.75d;
+		} else if (target instanceof InputCoverageTestFitness) {
+			weight = 0.75d;
+		} else if (target instanceof LineCoverageTestFitness) {
+			weight = 0.5d;
+		} else if (target instanceof MethodCoverageTestFitness) {
+			weight = 0.5d;
+		}
+		logger.debug("Target: {} weight: {}", target.toString(), weight);
+		return weight;
+	}
+
+
 	public Set<BasicBlock> lookForParent(BasicBlock block, ActualControlFlowGraph acfg, Set<BasicBlock> visitedBlock){
 		Set<BasicBlock> realParent = new HashSet<BasicBlock>();
 		Set<BasicBlock> parents = acfg.getParents(block);
