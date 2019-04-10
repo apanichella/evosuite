@@ -27,14 +27,15 @@ import java.util.Set;
 import org.evosuite.Properties;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.ChromosomeFactory;
-import org.evosuite.ga.FitnessFunction;
 import org.evosuite.ga.comparators.OnlyCrowdingComparator;
 import org.evosuite.ga.metaheuristics.mosa.structural.MultiCriteriaManager;
 import org.evosuite.ga.metaheuristics.mosa.structural.StructuralGoalManager;
-import org.evosuite.ga.operators.ranking.CrowdingDistance;
+import org.evosuite.ga.operators.ranking.*;
 import org.evosuite.utils.LoggingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.evosuite.Properties.SecondaryRankingType.CROWDING_DISTANCE;
 
 /**
  * Implementation of the DynaMOSA (Many Objective Sorting Algorithm) described in the paper
@@ -52,7 +53,7 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 	/** Manager to determine the test goals to consider at each generation */
 	protected StructuralGoalManager<T> goalsManager = null;
 
-	protected CrowdingDistance<T> distance = new CrowdingDistance<T>();
+	protected SecondaryRanking distance = null;
 
 	/**
 	 * Constructor based on the abstract class {@link AbstractMOSA}.
@@ -91,7 +92,7 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 
 		while ((remain > 0) && (remain >= front.size()) && !front.isEmpty()) {
 			// Assign crowding distance to individuals
-			this.distance.fastEpsilonDominanceAssignment(front, this.goalsManager.getCurrentGoals());
+			this.distance.assignSecondaryRank(front, this.goalsManager.getCurrentGoals());
 
 			// Add the individuals of this front
 			this.population.addAll(front);
@@ -108,7 +109,7 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 
 		// Remain is less than front(index).size, insert only the best one
 		if (remain > 0 && !front.isEmpty()) { // front contains individuals to insert
-			this.distance.fastEpsilonDominanceAssignment(front, this.goalsManager.getCurrentGoals());
+			this.distance.assignSecondaryRank(front, this.goalsManager.getCurrentGoals());
 			Collections.sort(front, new OnlyCrowdingComparator());
 			for (int k = 0; k < remain; k++) {
 				this.population.add(front.get(k));
@@ -134,6 +135,12 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 
 		this.goalsManager = new MultiCriteriaManager<>(this.fitnessFunctions);
 
+		switch (Properties.SECONDARY_RANKING_TYPE){
+
+		}
+
+		setSecondaryRanking();
+
 		LoggingUtils.getEvoLogger().info("* Initial Number of Goals in DynMOSA = " +
 				this.goalsManager.getCurrentGoals().size() +" / "+ this.getUncoveredGoals().size());
 
@@ -151,7 +158,7 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		this.rankingFunction.computeRankingAssignment(this.population, this.goalsManager.getCurrentGoals());
 
 		for (int i = 0; i < this.rankingFunction.getNumberOfSubfronts(); i++){
-			this.distance.fastEpsilonDominanceAssignment(this.rankingFunction.getSubfront(i), this.goalsManager.getCurrentGoals());
+			this.distance.assignSecondaryRank(this.rankingFunction.getSubfront(i), this.goalsManager.getCurrentGoals());
 		}
 
 		// next generations
@@ -172,4 +179,28 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		this.notifyEvaluation(c);
 	}
 
+	protected void setSecondaryRanking(){
+		switch (Properties.SECONDARY_RANKING_TYPE){
+			case CROWDING_DISTANCE: {
+				this.distance = new CrowdingDistance();
+				break;
+			}
+			case SUBVECTOR_DOMINANCE: {
+				this.distance = new SubvectorDominance();
+				break;
+			}
+			case EPSILON_DOMINANCE: {
+				this.distance = new EpsilonDominance();
+				break;
+			}
+			case POTENTIAL_COVERAGE: {
+				this.distance = new PotentialCoverage(((MultiCriteriaManager<T>) this.goalsManager).getDependencies());
+				break;
+			}
+			case COVERAGE_DIVERSITY: {
+				this.distance = new CoverageDiversity();
+				break;
+			}
+		}
+	}
 }
