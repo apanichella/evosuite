@@ -19,7 +19,11 @@
  */
 package org.evosuite.ga.metaheuristics.mosa.structural;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.Writer;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,9 +41,14 @@ import org.evosuite.ga.FitnessFunction;
 import org.evosuite.graphs.cfg.ActualControlFlowGraph;
 import org.evosuite.graphs.cfg.BasicBlock;
 import org.evosuite.graphs.cfg.BytecodeInstruction;
+import org.evosuite.utils.LoggingUtils;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.EdgeNameProvider;
+import org.jgrapht.ext.VertexNameProvider;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
+import org.jgrapht.traverse.DepthFirstIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,13 +69,16 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 	protected Set<FitnessFunction<T>> rootBranches = new HashSet<FitnessFunction<T>>();
 
 	@SuppressWarnings("unchecked")
-	public BranchFitnessGraph(Set<FitnessFunction<T>> goals){
+	public BranchFitnessGraph(Collection<FitnessFunction<T>> goals){
 		for (FitnessFunction<T> fitness : goals){
 			graph.addVertex(fitness);
 		}
 
 		// derive dependencies among branches
 		for (FitnessFunction<T> fitness : goals){
+			if (! (fitness instanceof BranchCoverageTestFitness)) {
+				continue;
+			}
 			Branch branch = ((BranchCoverageTestFitness) fitness).getBranch();
 			if (branch==null){
 				this.rootBranches.add(fitness); 
@@ -88,24 +100,19 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 					continue;
 				}
 				
-				// determine the weight of the child target
-				double weight = determineWeight (fitness);
-				
 				BranchCoverageGoal goal = new BranchCoverageGoal(newB, true, newB.getClassName(), newB.getMethodName());
 				BranchCoverageTestFitness newFitness = new BranchCoverageTestFitness(goal);
-				DependencyEdge edge1 = graph.addEdge((FitnessFunction<T>) newFitness, fitness);
-				graph.setEdgeWeight(edge1, weight);
+				addWeightedEdge((FitnessFunction<T>) newFitness, fitness);
 
 				BranchCoverageGoal goal2 = new BranchCoverageGoal(newB, false, newB.getClassName(), newB.getMethodName());
 				BranchCoverageTestFitness newfitness2 = new BranchCoverageTestFitness(goal2);
-				DependencyEdge edge2 = graph.addEdge((FitnessFunction<T>) newfitness2, fitness);
-				graph.setEdgeWeight(edge2, weight);
+				addWeightedEdge((FitnessFunction<T>) newfitness2, fitness);
 			}
 		}
 	}
 	
 	
-	private double determineWeight(FitnessFunction<T> target) {
+	double determineWeight(FitnessFunction<T> target) {
 		double weight = 1d;
 		if (target instanceof StrongMutationTestFitness) {
 			weight = 2d;
@@ -192,5 +199,105 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 			parents.add((FitnessFunction<T>) edge.getSource());
 		}
 		return parents;
+	}
+	
+	
+	//////////// Fitsum: code below is added for providing additional support for managing ECDG
+	
+	public DependencyEdge addWeightedEdge(FitnessFunction<T> source, FitnessFunction<T> target, double weight) {
+		DependencyEdge edge = graph.addEdge(source, target);
+		graph.setEdgeWeight(edge, weight);
+		return edge;
+	}
+	
+	public DependencyEdge addWeightedEdge(FitnessFunction<T> source, FitnessFunction<T> target) {
+		double weight = determineWeight(target);
+		DependencyEdge edge = graph.addEdge(source, target);
+		graph.setEdgeWeight(edge, weight);
+		return edge;
+	}
+	
+	public void exportGraphAsDot() {
+		LoggingUtils.getEvoLogger().info("Dumping ECDG in DOT format ...");
+		
+		VertexNameProvider<FitnessFunction<T>> vertexIdProvider = new VertexNameProvider<FitnessFunction<T>>() {
+
+			@Override
+			public String getVertexName(FitnessFunction<T> vertex) {
+				return "" + vertex.hashCode();
+			}
+		};
+		
+		VertexNameProvider<FitnessFunction<T>> vertexLabelProvider = new VertexNameProvider<FitnessFunction<T>>() {
+
+			@Override
+			public String getVertexName(FitnessFunction<T> vertex) {
+				return vertex.toString();
+			}
+		};
+		EdgeNameProvider<DependencyEdge> edgeLabelProvider = new EdgeNameProvider<DependencyEdge>() {
+
+			@Override
+			public String getEdgeName(DependencyEdge edge) {
+				return "" + graph.getEdgeWeight(edge);
+			}
+		};
+		DOTExporter<FitnessFunction<T>, DependencyEdge> dotExporter = new DOTExporter<FitnessFunction<T>, DependencyEdge>(vertexIdProvider, vertexLabelProvider , edgeLabelProvider);
+		Writer writer;
+		try {
+			writer = new FileWriter ("ecdg.dot");
+			dotExporter.export(writer, graph);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Returns all nodes of the graph reachable from the given node (not only direct children)
+	 * @param parent
+	 * @return set of all (recursively) reachable nodes from the given node.
+	 */
+	public Set<FitnessFunction<T>> getAllStructuralChildren(FitnessFunction<T> parent){
+		DepthFirstIterator<FitnessFunction<T>, DependencyEdge> iterator = new DepthFirstIterator<FitnessFunction<T>, DependencyEdge>(graph, parent);
+		Set<FitnessFunction<T>> children = new HashSet<FitnessFunction<T>>();
+		while (iterator.hasNext()){
+			children.add((FitnessFunction<T>) iterator.next());
+		}
+		return children;
+	}
+	
+	
+	/**
+	 * Returns a count of all nodes of the graph reachable from the given node (not only direct children)
+	 * @param parent
+	 * @return count of all (recursively) reachable nodes from the given node.
+	 */
+	public double getAllStructuralChildrenCount(FitnessFunction<T> parent){
+		DepthFirstIterator<FitnessFunction<T>, DependencyEdge> iterator = new DepthFirstIterator<FitnessFunction<T>, DependencyEdge>(graph, parent);
+		Set<FitnessFunction<T>> children = new HashSet<FitnessFunction<T>>();
+		while (iterator.hasNext()){
+			children.add((FitnessFunction<T>) iterator.next());
+		}
+		return children.size();
+	}
+	
+	/**
+	 * Returns a "weighted" count of all (recursively) nodes. It basically returns a weighted sum. 
+	 * @param parent
+	 * @return weighted count (sum)
+	 */
+	public double getWeightedChildrenCount(FitnessFunction<T> parent){
+		double weightedCount = 0d;
+		DepthFirstIterator<FitnessFunction<T>, DependencyEdge> iterator = new DepthFirstIterator<FitnessFunction<T>, DependencyEdge>(graph, parent);
+		while (iterator.hasNext()){
+			FitnessFunction<T> node = iterator.next();
+			Set<DependencyEdge> incomingEdges = graph.incomingEdgesOf(node);
+			for (DependencyEdge edge : incomingEdges) {
+				double w = graph.getEdgeWeight(edge);
+				weightedCount += w;
+			}
+		}
+		return weightedCount;
 	}
 }
