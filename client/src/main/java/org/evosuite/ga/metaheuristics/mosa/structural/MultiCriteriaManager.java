@@ -149,6 +149,15 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 	 * TODO build the graph directly (without first building the dependencies map).
 	 */
 	private void buildExtendedControlDependencyGraph() {
+		// DEBUG print dependencies
+		for (Entry<BranchCoverageTestFitness, Set<FitnessFunction<T>>> entry : dependencies.entrySet()) {
+			BranchCoverageTestFitness branch = entry.getKey();
+			LoggingUtils.getEvoLogger().info("{}:", branch);
+			for (FitnessFunction<T> dependent : entry.getValue()) {
+				LoggingUtils.getEvoLogger().info("===> {}", dependent);
+			}
+		}
+		
 		// iterate over the keyset of the map (branches), which are already vertices in the graph, and insert their dependents 
 		// as weighted edges to the graph
 		logger.debug("Building ECDG, initial size: {}", graph.graph.vertexSet().size());
