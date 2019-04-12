@@ -34,6 +34,7 @@ import org.evosuite.coverage.io.input.InputCoverageTestFitness;
 import org.evosuite.coverage.io.output.OutputCoverageTestFitness;
 import org.evosuite.coverage.line.LineCoverageTestFitness;
 import org.evosuite.coverage.method.MethodCoverageTestFitness;
+import org.evosuite.coverage.method.MethodNoExceptionCoverageTestFitness;
 import org.evosuite.coverage.mutation.StrongMutationTestFitness;
 import org.evosuite.coverage.mutation.WeakMutationTestFitness;
 import org.evosuite.ga.Chromosome;
@@ -124,7 +125,7 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 			weight = 0.75d;
 		} else if (target instanceof LineCoverageTestFitness) {
 			weight = 0.5d;
-		} else if (target instanceof MethodCoverageTestFitness) {
+		} else if (target instanceof MethodCoverageTestFitness || target instanceof MethodNoExceptionCoverageTestFitness) {
 			weight = 0.5d;
 		}
 		logger.debug("Target: {} weight: {}", target.toString(), weight);
@@ -224,7 +225,7 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 
 			@Override
 			public String getVertexName(FitnessFunction<T> vertex) {
-				return "" + vertex.hashCode();
+				return "" + vertex.toString().hashCode();
 			}
 		};
 		
