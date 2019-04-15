@@ -135,10 +135,6 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 
 		this.goalsManager = new MultiCriteriaManager<>(this.fitnessFunctions);
 
-		switch (Properties.SECONDARY_RANKING_TYPE){
-
-		}
-
 		setSecondaryRanking();
 
 		LoggingUtils.getEvoLogger().info("* Initial Number of Goals in DynMOSA = " +

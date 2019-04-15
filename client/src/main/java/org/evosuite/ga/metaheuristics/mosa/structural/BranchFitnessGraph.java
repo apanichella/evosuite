@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Annibale Panichella
  */
-
 public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<T>> implements Serializable {
 
 	private static final long serialVersionUID = -8020578778906420503L;
