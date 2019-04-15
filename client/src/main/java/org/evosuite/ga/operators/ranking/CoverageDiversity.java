@@ -3,6 +3,8 @@ package org.evosuite.ga.operators.ranking;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.FitnessFunction;
 import org.evosuite.testcase.TestChromosome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -12,6 +14,8 @@ import java.util.Set;
 public class CoverageDiversity<T extends Chromosome> extends SecondaryRanking<T> {
 
     private static final long serialVersionUID = -5899577241884258042L;
+
+    private static final Logger logger = LoggerFactory.getLogger(CoverageDiversity.class);
 
     @Override
     public void assignSecondaryRank(List<T> front, Set<FitnessFunction<T>> set){
@@ -24,16 +28,27 @@ public class CoverageDiversity<T extends Chromosome> extends SecondaryRanking<T>
 
                 TestChromosome tch2 =  (TestChromosome) t2;
 
-                Set set1 = new HashSet(tch1.getLastExecutionResult().getTrace().getCoveredLines());
-                Set set2 = new HashSet(tch2.getLastExecutionResult().getTrace().getCoveredLines());
+                Set set_diff = new HashSet(tch1.getLastExecutionResult().getTrace().getCoveredTrueBranches());
+                set_diff.addAll(tch1.getLastExecutionResult().getTrace().getCoveredFalseBranches());
+                set_diff.addAll(tch1.getLastExecutionResult().getTrace().getCoveredBranchlessMethods());
 
-                set1.removeAll(set2);
+                Set union = new HashSet(tch2.getLastExecutionResult().getTrace().getCoveredTrueBranches());
+                union.addAll(tch2.getLastExecutionResult().getTrace().getCoveredFalseBranches());
+                union.addAll(tch2.getLastExecutionResult().getTrace().getCoveredBranchlessMethods());
 
-                difference = Math.min(difference, set1.size());
+                set_diff.removeAll(union);
+
+                union.addAll(set_diff);
+
+                difference = Math.min(difference, set_diff.size());
+                //difference = difference / set.size();
 
             }
-            tch1.setDistance(difference/(difference+1));
+            tch1.setDistance(difference);
         }
 
+        //for (T test : front){
+        //    logger.error("Test {} with distance {}", test.hashCode(), test.getDistance());
+        //}
     }
 }
