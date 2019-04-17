@@ -198,6 +198,10 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 				this.distance = new CoverageDiversity();
 				break;
 			}
+			case EUCLIDEAN_DISTANCE: {
+				this.distance = new EuclideanDistance();
+				break;
+			}
 		}
 	}
 }

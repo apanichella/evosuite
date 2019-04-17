@@ -337,7 +337,8 @@ public class Properties {
 		EPSILON_DOMINANCE,
 		SUBVECTOR_DOMINANCE,
 		POTENTIAL_COVERAGE,
-        COVERAGE_DIVERSITY
+        COVERAGE_DIVERSITY,
+		EUCLIDEAN_DISTANCE
 	}
 
 	@Parameter(key = "secondary_ranking_type", group = "Runtime", description = "type of ranking to use in DynaMOSA")
