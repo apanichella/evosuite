@@ -553,4 +553,8 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 	public Map<BranchCoverageTestFitness, Set<FitnessFunction<T>>> getDependencies(){
 		return this.dependencies;
 	}
+
+	public BranchFitnessGraph getGraph() {
+		return this.graph;
+	}
 }

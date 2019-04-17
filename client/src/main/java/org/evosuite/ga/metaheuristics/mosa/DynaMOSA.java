@@ -121,9 +121,9 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		this.currentIteration++;
 		//logger.debug("N. fronts = {}", rankingFunction.getNumberOfSubfronts());
 		//logger.debug("1* front size = {}", rankingFunction.getSubfront(0).size());
-		logger.debug("Covered goals = {}", goalsManager.getCoveredGoals().size());
-		logger.debug("Current goals = {}", goalsManager.getCurrentGoals().size());
-		logger.debug("Uncovered goals = {}", goalsManager.getUncoveredGoals().size());
+		logger.error("Covered goals = {}", goalsManager.getCoveredGoals().size());
+		logger.error("Current goals = {}", goalsManager.getCurrentGoals().size());
+		logger.error("Uncovered goals = {}", goalsManager.getUncoveredGoals().size());
 	}
 
 	/**
@@ -134,10 +134,6 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		logger.debug("executing generateSolution function");
 
 		this.goalsManager = new MultiCriteriaManager<>(this.fitnessFunctions);
-
-		switch (Properties.SECONDARY_RANKING_TYPE){
-
-		}
 
 		setSecondaryRanking();
 
@@ -194,7 +190,8 @@ public class DynaMOSA<T extends Chromosome> extends AbstractMOSA<T> {
 				break;
 			}
 			case POTENTIAL_COVERAGE: {
-				this.distance = new PotentialCoverage(((MultiCriteriaManager<T>) this.goalsManager).getDependencies());
+				MultiCriteriaManager multi = ((MultiCriteriaManager<T>) this.goalsManager);
+				this.distance = new PotentialCoverage(multi.getDependencies(), multi.getGraph());
 				break;
 			}
 			case COVERAGE_DIVERSITY: {
