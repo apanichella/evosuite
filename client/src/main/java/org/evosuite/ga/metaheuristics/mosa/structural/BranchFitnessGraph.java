@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.evosuite.Properties;
 import org.evosuite.coverage.branch.Branch;
 import org.evosuite.coverage.branch.BranchCoverageGoal;
 import org.evosuite.coverage.branch.BranchCoverageTestFitness;
@@ -246,7 +247,7 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 		DOTExporter<FitnessFunction<T>, DependencyEdge> dotExporter = new DOTExporter<FitnessFunction<T>, DependencyEdge>(vertexIdProvider, vertexLabelProvider , edgeLabelProvider);
 		Writer writer;
 		try {
-			writer = new FileWriter ("ecdg.dot");
+			writer = new FileWriter (Properties.TARGET_CLASS + ".ecdg.dot");
 			dotExporter.export(writer, graph);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
