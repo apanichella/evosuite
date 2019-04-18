@@ -21,6 +21,7 @@ package org.evosuite.ga.metaheuristics.mosa.structural;
 
 import org.evosuite.ga.FitnessFunction;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DefaultWeightedEdge;
 
 /**
  * 
@@ -28,7 +29,7 @@ import org.jgrapht.graph.DefaultEdge;
  * @author Annibale Panichella
  */
 
-public class DependencyEdge extends DefaultEdge{
+public class DependencyEdge extends DefaultWeightedEdge{
 	/**
 	 * 
 	 */

@@ -19,12 +19,15 @@
  */
 package org.evosuite.ga.metaheuristics.mosa.structural;
 
+import java.io.FileWriter;
 import java.io.Serializable;
+import java.io.Writer;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.evosuite.Properties;
@@ -48,6 +51,7 @@ import org.evosuite.coverage.mutation.WeakMutationTestFitness;
 import org.evosuite.coverage.statement.StatementCoverageTestFitness;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.FitnessFunction;
+import org.evosuite.graphs.GraphPool;
 import org.evosuite.graphs.cfg.BytecodeInstruction;
 import org.evosuite.graphs.cfg.BytecodeInstructionPool;
 import org.evosuite.graphs.cfg.ControlDependency;
@@ -60,6 +64,9 @@ import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.TestCaseExecutor;
 import org.evosuite.utils.ArrayUtil;
 import org.evosuite.utils.LoggingUtils;
+import org.jgrapht.Graph;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.VertexNameProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +97,7 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 		for (Criterion criterion : Properties.CRITERION){
 			switch (criterion){
 				case BRANCH:
-					break; // branches have been handled by getControlDepencies4Branches
+					break; // branches have been handled by getControlDepencies4Branches AND BranchFitnessGraph constructor
 				case EXCEPTION:
 					break; // exception coverage is handled by calculateFitness
 				case LINE:
@@ -128,10 +135,51 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 			}
 		}
 
+		// dependencies are updated at this point, now build the graph from the dependencies
+		buildExtendedControlDependencyGraph ();
+		
 		// initialize current goals
 		this.currentGoals.addAll(graph.getRootBranches());
 	}
 
+	/**
+	 * Build the ECDG which contains all coverage targets and their control dependencies 
+	 * represented as a weighted directed graph. The edges are weighted based on the type of dependent node.
+	 * Since the "dependencies" map is already built and ready at this point, we'll use it to build the graph.
+	 * TODO build the graph directly (without first building the dependencies map).
+	 */
+	private void buildExtendedControlDependencyGraph() {
+		// DEBUG print dependencies
+		for (Entry<BranchCoverageTestFitness, Set<FitnessFunction<T>>> entry : dependencies.entrySet()) {
+			BranchCoverageTestFitness branch = entry.getKey();
+			LoggingUtils.getEvoLogger().info("{}:", branch);
+			for (FitnessFunction<T> dependent : entry.getValue()) {
+				LoggingUtils.getEvoLogger().info("===> {}", dependent);
+			}
+		}
+		
+		// iterate over the keyset of the map (branches), which are already vertices in the graph, and insert their dependents 
+		// as weighted edges to the graph
+		logger.debug("Building ECDG, initial size: {}", graph.graph.vertexSet().size());
+		for (Entry<BranchCoverageTestFitness, Set<FitnessFunction<T>>> entry : dependencies.entrySet()) {
+			for (FitnessFunction<T> dependent : entry.getValue()) {
+				graph.addWeightedEdge((FitnessFunction<T>) entry.getKey(), dependent);
+			}
+		}
+		logger.debug("Built ECDG: final size: {} >> {}", graph.graph.vertexSet().size(), graph.toString());
+		graph.exportGraphAsDot();
+		
+//		// DEBUG get weighted and unweighted counts for the root
+//		Set<FitnessFunction<T>> rootBranches = graph.getRootBranches();
+//		for (FitnessFunction<T> root : rootBranches) {
+//			double weightedChildrenCount = graph.getWeightedChildrenCount(root);
+//			double allChildrenCount = graph.getAllStructuralChildrenCount(root);
+//			int childrenCount = graph.getStructuralChildren(root).size();
+//			
+//			LoggingUtils.getEvoLogger().info("Root: {}: {}, {}, {}", root.toString(), childrenCount, allChildrenCount, weightedChildrenCount);
+//		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void addDependencies4TryCatch() {
 		logger.debug("Added dependencies for Try-Catch");
@@ -499,7 +547,7 @@ public class MultiCriteriaManager<T extends Chromosome> extends StructuralGoalMa
 		// initialize the maps
 		this.initializeMaps(setOfBranches);
 
-		return new BranchFitnessGraph<T, FitnessFunction<T>>(setOfBranches);
+		return new BranchFitnessGraph<T, FitnessFunction<T>>(fitnessFunctions);
 	}
 
 	public Map<BranchCoverageTestFitness, Set<FitnessFunction<T>>> getDependencies(){
