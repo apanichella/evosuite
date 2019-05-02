@@ -213,8 +213,14 @@ public class BranchFitnessGraph<T extends Chromosome, V extends FitnessFunction<
 	
 	public DependencyEdge addWeightedEdge(FitnessFunction<T> source, FitnessFunction<T> target) {
 		double weight = determineWeight(target);
-		DependencyEdge edge = graph.addEdge(source, target);
-		graph.setEdgeWeight(edge, weight);
+		DependencyEdge edge = null;
+		try {
+			edge = graph.addEdge(source, target);
+			graph.setEdgeWeight(edge, weight);
+			return edge;
+		} catch (java.lang.IllegalArgumentException e){
+			graph.removeEdge(edge);
+		}
 		return edge;
 	}
 	
